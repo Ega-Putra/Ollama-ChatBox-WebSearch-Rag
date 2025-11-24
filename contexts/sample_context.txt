@@ -1,0 +1,3 @@
+This is a sample context file for RAG tests.
+It contains some information about Python installation and usage.
+Install via the official site: https://www.python.org/

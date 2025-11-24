@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Command Terminal</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            AI Terminal Control Panel
+        </div>
+        <div class="sessions-list" id="sessions-list">
+        </div>
+        <div class="settings-panel">
+            <div class="settings-item">
+                <label>Model:</label>
+                <select id="model-select">
+                    <option value="">Loading models...</option>
+                </select>
+            </div>
+            <div class="settings-item">
+                <label>
+                    <input type="checkbox" id="show-thinking" checked>
+                    Show AI thinking
+                </label>
+            </div>
+            <div class="settings-item">
+                <label>
+                    <input type="checkbox" id="enable-search" checked>
+                    Enable web search
+                </label>
+            </div>
+            <div class="settings-item">
+                <label>RAG Context Files:</label>
+                <input type="file" id="context-files" multiple />
+                <div id="context-list" class="context-list"></div>
+            </div>
+            <button class="new-chat-btn" onclick="window.chatApp.startNewChat()">New Chat Session</button>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="terminal-header">
+            AI Command Terminal [Version 1.0] - Session: <span id="current-session">New Chat</span>
+        </div>
+        <div class="terminal-messages" id="chat-messages"></div>
+        <div class="loading" id="loading">Processing...</div>
+        <div class="input-container">
+            <span id="prompt">></span>
+            <input type="text" id="message-input" autofocus placeholder="Type your message...">
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
