@@ -127,50 +127,6 @@ def set_model():
         return jsonify({"success": True, "current_model": current_model})
     return jsonify({"error": "No model name provided"}), 400
 
-
-# =======================
-# 🔍 FUNGSI BRAVE SEARCH
-# =======================
-def perform_brave_search(query):
-    """Melakukan pencarian via Brave API"""
-    try:
-        headers = {
-            "Accept": "application/json",
-            "User-Agent": "Mozilla/5.0",
-        }
-        if BRAVE_API_KEY:
-            headers["X-Subscription-Token"] = BRAVE_API_KEY
-
-        params = {
-            "q": query,
-            "count": 5,
-            "country": "id",
-            "safesearch": "strict",
-            "freshness": "day"
-        }
-
-        response = requests.get(BRAVE_API_URL, headers=headers, params=params, timeout=10)
-        if response.status_code == 200:
-            data = response.json()
-            web_results = data.get("web", {}).get("results", [])
-            results = []
-            for r in web_results[:3]:
-                title = r.get("title", "")
-                url = r.get("url", "")
-                desc = r.get("description", "")
-                if title and url:
-                    results.append(f"[{title}]({url}): {desc}")
-            if results:
-                context = "Web search results (Brave):\n" + "\n".join(results) + "\n\n"
-            else:
-                context = "No relevant web search results found.\n\n"
-            return context
-        else:
-            return f"Web search failed: Brave returned status {response.status_code}.\n\n"
-    except Exception as e:
-        return f"Error during web search: {str(e)}\n\n"
-
-
 # =======================
 # 💬 CHAT (OLLAMA + SEARCH)
 # =======================
