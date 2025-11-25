@@ -33,6 +33,20 @@
                 </label>
             </div>
             <div class="settings-item">
+                <label>
+                    <input type="checkbox" id="enable-proxy">
+                    Use proxy for web search
+                </label>
+            </div>
+            <div class="settings-item">
+                <label>Proxy IP:</label>
+                <input type="text" id="proxy-ip" placeholder="127.0.0.1" />
+                <label>Port:</label>
+                <input type="text" id="proxy-port" placeholder="8080" style="width:80px;" />
+                <button type="button" id="proxy-test-btn">Test Proxy</button>
+                <div id="proxy-test-result" style="margin-top:6px;font-size:0.9em;color:#444"></div>
+            </div>
+            <div class="settings-item">
                 <label>RAG Context Files:</label>
                 <input type="file" id="context-files" multiple />
                 <div id="context-list" class="context-list"></div>

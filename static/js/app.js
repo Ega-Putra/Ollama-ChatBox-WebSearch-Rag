@@ -6,6 +6,11 @@ class ChatApp {
         this.modelSelect = document.getElementById('model-select');
         this.showThinking = document.getElementById('show-thinking');
         this.enableSearch = document.getElementById('enable-search');
+        this.proxyEnable = document.getElementById('enable-proxy');
+        this.proxyIp = document.getElementById('proxy-ip');
+        this.proxyPort = document.getElementById('proxy-port');
+        this.proxyTestBtn = document.getElementById('proxy-test-btn');
+        this.proxyTestResult = document.getElementById('proxy-test-result');
         this.sessionsList = document.getElementById('sessions-list');
         this.currentSessionSpan = document.getElementById('current-session');
         
@@ -37,6 +42,23 @@ class ChatApp {
         this.contextListEl = document.getElementById('context-list');
         if (this.contextFilesInput) {
             this.contextFilesInput.addEventListener('change', (e) => this.handleContextFiles(e.target.files));
+        }
+        // proxy UI
+        if (this.proxyEnable && this.proxyIp && this.proxyPort) {
+            // initialize state
+            const setDisabled = (disabled) => {
+                this.proxyIp.disabled = disabled;
+                this.proxyPort.disabled = disabled;
+                if (this.proxyTestBtn) this.proxyTestBtn.disabled = disabled;
+            };
+            setDisabled(!this.proxyEnable.checked);
+            this.proxyEnable.addEventListener('change', () => {
+                setDisabled(!this.proxyEnable.checked);
+                if (!this.proxyEnable.checked && this.proxyTestResult) this.proxyTestResult.textContent = '';
+            });
+            if (this.proxyTestBtn) {
+                this.proxyTestBtn.addEventListener('click', () => this.testProxy());
+            }
         }
         // load existing contexts
         this.refreshContexts();
@@ -441,6 +463,10 @@ class ChatApp {
                 body: JSON.stringify({
                     message: message,
                     search: this.enableSearch.checked
+                    ,
+                    proxyEnabled: this.proxyEnable ? this.proxyEnable.checked : false,
+                    proxyIp: this.proxyIp ? this.proxyIp.value : '',
+                    proxyPort: this.proxyPort ? this.proxyPort.value : ''
                 })
             });
 
@@ -467,6 +493,42 @@ class ChatApp {
             this.addMessage('Error: Could not connect to the server', false);
         } finally {
             this.loadingIndicator.style.display = 'none';
+        }
+    }
+
+    async testProxy() {
+        if (!this.proxyEnable || !this.proxyIp || !this.proxyPort) return;
+        const enabled = this.proxyEnable.checked;
+        const ip = (this.proxyIp.value || '').trim();
+        const port = (this.proxyPort.value || '').trim();
+        if (!enabled) {
+            this.addMessage('Proxy is not enabled.', false);
+            return;
+        }
+        if (!ip || !port) {
+            this.addMessage('Please provide proxy IP and port.', false);
+            return;
+        }
+        if (this.proxyTestResult) this.proxyTestResult.textContent = 'Testing...';
+        try {
+            const resp = await fetch('/test-proxy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ proxyEnabled: true, proxyIp: ip, proxyPort: port })
+            });
+            const data = await resp.json();
+            if (data && data.success) {
+                const details = data.details ? ` Status ${data.status_code}. ${data.details}` : ` Status ${data.status_code}`;
+                this.addMessage('Proxy test succeeded.' + details, false);
+                if (this.proxyTestResult) this.proxyTestResult.textContent = 'Proxy OK';
+            } else {
+                const err = (data && data.error) ? data.error : 'Unknown error';
+                this.addMessage('Proxy test failed: ' + err, false);
+                if (this.proxyTestResult) this.proxyTestResult.textContent = 'Proxy failed';
+            }
+        } catch (e) {
+            this.addMessage('Proxy test error: ' + e.message, false);
+            if (this.proxyTestResult) this.proxyTestResult.textContent = 'Error';
         }
     }
 }

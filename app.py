@@ -136,6 +136,19 @@ def chat():
     data = request.json
     user_message = data.get("message", "")
     should_search = data.get("search", False)
+    proxy_enabled = data.get('proxyEnabled', False)
+    proxy_val = (data.get('proxy') or '').strip()
+    proxy_ip = (data.get('proxyIp') or '').strip()
+    proxy_port = (data.get('proxyPort') or '').strip()
+    proxies = None
+    # Build proxy string: priority: explicit proxy string > ip+port
+    if proxy_enabled:
+        if not proxy_val and proxy_ip and proxy_port:
+            proxy_val = f"{proxy_ip}:{proxy_port}"
+        if proxy_val:
+            if not proxy_val.startswith('http://') and not proxy_val.startswith('https://'):
+                proxy_val = 'http://' + proxy_val
+            proxies = {'http': proxy_val, 'https': proxy_val}
 
     today = datetime.datetime.now().strftime("%A, %d %B %Y")
     system_instruction = (
@@ -170,7 +183,8 @@ def chat():
                 search_response = requests.get(
                     search_url,
                     headers=headers,
-                    timeout=10
+                    timeout=10,
+                    proxies=proxies
                 )
 
                 if search_response.status_code == 200 and len(search_response.text) > 1000:
@@ -264,12 +278,13 @@ def chat():
                         DUCKDUCKGO_URL,
                         headers=headers,
                         data=params,
-                        timeout=10
+                        timeout=10,
+                        proxies=proxies
                     )
                 except requests.exceptions.SSLError:
                     try:
                         ddg_http = DUCKDUCKGO_URL.replace('https://', 'http://')
-                        ddg_response = requests.post(ddg_http, headers=headers, data=params, timeout=10)
+                        ddg_response = requests.post(ddg_http, headers=headers, data=params, timeout=10, proxies=proxies)
                     except Exception as e:
                         raise
                 
@@ -411,6 +426,33 @@ def delete_context():
         return jsonify({'success': removed})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+@app.route('/test-proxy', methods=['POST'])
+def test_proxy():
+    try:
+        data = request.json or {}
+        proxy_enabled = data.get('proxyEnabled', False)
+        proxy_ip = (data.get('proxyIp') or '').strip()
+        proxy_port = (data.get('proxyPort') or '').strip()
+        if not proxy_enabled:
+            return jsonify({'success': False, 'error': 'Proxy not enabled'}), 400
+        if not proxy_ip or not proxy_port:
+            return jsonify({'success': False, 'error': 'proxyIp and proxyPort required'}), 400
+
+        proxy_val = f"{proxy_ip}:{proxy_port}"
+        if not proxy_val.startswith('http://') and not proxy_val.startswith('https://'):
+            proxy_val = 'http://' + proxy_val
+        proxies = {'http': proxy_val, 'https': proxy_val}
+
+        # Try a simple HTTP request through the proxy (use example.com to avoid SSL complexities)
+        try:
+            resp = requests.get('http://example.com', timeout=10, proxies=proxies)
+            return jsonify({'success': True, 'status_code': resp.status_code, 'details': f'Fetched {len(resp.text)} bytes'})
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 500
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 # =======================
